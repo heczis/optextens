@@ -3,7 +3,6 @@ Module for interpolation-related methods.
 """
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.integrate as sint
 import scipy.interpolate as sitp
 
 import functions
@@ -198,21 +197,31 @@ def main():
     plt.plot([line.start_point[0], line.end_point[0]],
              [line.start_point[1], line.end_point[1]])
     plt.plot(ints[0], ints[1], 'ok')
+    plt.title('Data and its slice')
     plt.grid()
 
     plt.figure()
+    # data values:
     x = np.linspace(-.1, 3.4)
     y = np.array([val for val in map(slice_fun, x)])
+    # interpolation values:
     X = np.linspace(-1, 4, 8)
     Y = np.array([val for val in map(slice_fun, X)])
 
     spline_degree = 5
-    int_spline = sitp.make_lsq_spline(X, Y, np.r_[
-        [min(X)] * (spline_degree+1), [1.5], [max(X)] * (spline_degree+1)], k=spline_degree)
-    plt.plot(x, y)
-    plt.plot(x, sitp.splev(x, int_spline))
-    plt.plot(x, sitp.splev(x, int_spline, der=1))
+    int_spline = sitp.make_lsq_spline(
+        X, Y, np.r_[[min(X)] * (spline_degree+1),
+                    [1.5],
+                    [max(X)] * (spline_degree+1)],
+        k=spline_degree)
+
+    plt.plot(x, y, label='data slice')
+    plt.plot(x, sitp.splev(x, int_spline),
+             label='spline, degree %d' % spline_degree)
+    plt.plot(x, sitp.splev(x, int_spline, der=1), label='spline derivative')
     plt.grid()
+    plt.legend(loc='best')
+    plt.title('Interpolation of data slice by splines')
     plt.show()
 
 if __name__ == '__main__':

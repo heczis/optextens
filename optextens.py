@@ -100,20 +100,20 @@ class Image:
         return [channel.get_continuous(approx_fun)
                 for channel in self.channels]
 
-def get_smooth_fun(t_vals, fun, mark_thickness=40):
-    """
-    Returns smoothed values of `fun`, evaluated at `t_vals`.
-    """
-    smooth_fun = interpolation.smooth_int(fun, span=mark_thickness)
-    smooth_vals = [val for val in map(smooth_fun, t_vals)]
-    return smooth_vals
-
 def get_marks(fun, threshold=.8, mark_thickness=10):
     """
     Returns position of marks in 1D.
     Assumes dark marks on light surface.
 
-    smooth_fun : function
+    Minimization method:
+    1. Compute the integral of `fun` over the whole line.
+    2. Find all intervals, where the values of `fun` are below `threshold*
+       integral`.
+    3. Use `scipy.minimize_scalar` (method 'Bounded') to find minimum on each
+       subinterval.
+
+    fun : piecewise constant function (pixel values)
+    thershold : multiple of fun integral to split the interval into sub-intervals
     """
     fun_supp = functions.ConstFunction(
         nodes=[fun.nodes[0], fun.nodes[-1]],
@@ -130,45 +130,26 @@ def get_marks(fun, threshold=.8, mark_thickness=10):
         res = sopt.minimize_scalar(
                 smooth_f,
                 bounds=[f.nodes[0] - .5*int_len, f.nodes[-1] + .5*int_len], method='Bounded')
-        """
-        print(' res:\n', res)
-        plt.figure()
-        x = np.linspace(f.nodes[0], f.nodes[-1], 101)
-        plt.plot(x, fun(x))
-        plt.show()
-        """
         out.append(res.x)
 
     return out
 
-def get_marks_2(fun, maxiter=20):
+def get_marks_2(fun, mark_thickness, n_pts=101, x0tol=1):
     """
     Returns position of marks in 1D.
     Assumes dark marks on light surface.
 
-    smooth_fun : function
+    Minimization method:
+    1. Split the interval into two halves.
+    2. Use brute force to find starting guesses.
+    3. Use `scipy.minimize_scalar` to finallize the search
+
+    fun : piecewise constant function (pixel values)
+    mark_thickness : float
+    n_pts : int, number of points for finding initial guess, x0, using brute-force
+    x0tol : float, solution is sought on the interval [x0-x0tol, x0+x0tol]
     """
-    main_interval = [fun.nodes[0], fun.nodes[-1]]
-    length = main_interval[1] - main_interval[0]
-    intervals = [
-        [main_interval[0], main_interval[0] + .5 * length],
-        [main_interval[0] + .5 * length, main_interval[1]]]
-
-    for ii in range(maxiter):
-        minima = [0, 0]
-        for jj, interval in enumerate(intervals):
-            ilen = interval[1] - interval[0]
-            smooth_fun = functions.smoothe(fun, functions.get_window, .5 * ilen)
-            # find minima
-            minima[jj] = sopt.minimize_scalar(
-                smooth_fun, bounds=interval, method='Bounded').x
-            # reduce interval size and window span
-            intervals[jj] = [minima[jj]-.25*ilen, minima[jj]+.25*ilen]
-
-    return [.5*sum(interval) for interval in intervals]
-
-def get_marks_3(fun, span, n_pts=101, x0tol=1):
-    smooth_fun = functions.smoothe(fun, functions.get_window, span)
+    smooth_fun = functions.smoothe(fun, functions.get_window, mark_thickness)
     x = np.linspace(fun.nodes[0], fun.nodes[-1], n_pts)
     smooth_vals = smooth_fun(x)
     x0 = [
@@ -253,8 +234,6 @@ def main():
         for chn, fun in enumerate(lines):
             smooth_fun = functions.smoothe(fun, functions.get_window, args.mark_thickness)
             marks = get_marks(fun, mark_thickness=args.mark_thickness, threshold=.8)
-            #marks = get_marks_2(fun)
-            #marks = get_marks_3(fun, args.mark_thickness)
             print('marks:', marks)
             mark1, mark2 = marks[0], marks[-1]
             length_i = mark1 - mark2
@@ -271,22 +250,11 @@ def main():
                 plt.figure('lines' + _get_fig(lln, chn), figsize=(4,1.5))
                 fun.plot(label='$p$')
                 plt.plot(t_vals, smooth_vals, '--', label='$f$')
-                """
-                fun_supp = functions.ConstFunction(
-                    nodes=[fun.nodes[0], fun.nodes[-1]],
-                    values=[1.,])
-                integral_val = fun.integrate_all() / fun_supp.integrate_all()
-                
-                thr_funs = fun.get_clusters_by_max(.96*integral_val)
-                for f in thr_funs:
-                    sm_f = functions.smoothe(f, functions.get_window, args.mark_thickness)
-                    x = np.linspace(f.nodes[0], f.nodes[-1], 2*(f.nodes[-1]-f.nodes[0])+1)
-                    plt.plot(x, sm_f(x))
                 plt.plot(
                     [mark1, mark2],
-                    [smooth_fun(mark1), smooth_fun(mark2)], 'xk')"""
+                    [smooth_fun(mark1), smooth_fun(mark2)], 'xk')
                 plt.title('šířka okna %dpx' % (2*args.mark_thickness))
-                #plt.legend(loc='best')
+                plt.legend(loc='best')
 
             if args.show_images:
                 plt.figure(_get_fig(lln, chn))

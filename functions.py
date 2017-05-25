@@ -196,26 +196,6 @@ class LinFunction(Function):
         d_vals = np.array([v2-v1 for v1, v2 in self.values])
         return ConstFunction(self.nodes, d_vals / np.diff(self.nodes))
 
-def do_test():
-    x = np.linspace(0, 10, 101)
-
-    f = ConstFunction([1, 3, 7], [2, 1.5])
-    g = LinFunction([2, 5, 6], [[1, 2], [3, 0]])
-
-    plt.plot(x, f(x), label='$f$')
-    plt.plot(f.nodes, f(f.nodes), 'ob')
-    plt.plot(x, g(x), label='$g$')
-    plt.plot(g.nodes, g(g.nodes), 'o', color='orange')
-
-    h = f * g
-    print('integrals:\n f: %f\n g: %f\n h: %f' % (
-        f.integrate_all(), g.integrate_all(), h.integrate_all()))
-    plt.plot(x, h(x), '--', label='$f\cdot g$')
-    plt.plot(h.nodes, h(h.nodes), 'og')
-    plt.legend(loc='best')
-    plt.grid()
-    plt.show()
-
 def get_window(x0, span=2):
     nodes = [x0-span, x0, x0+span]
     values = [[0, 1. / span], [1. / span, 0]]
@@ -255,6 +235,9 @@ def diff_smoothe(fun, window_getter, diff_window_getter, span=10):
     return smooth_fun
 
 def test_smoothing():
+    """
+    Illustrate the use of the `functions` module
+    """
     x = np.linspace(0, 10, 101)
 
     data = ConstFunction([1, 2, 4, 5, 7, 8], [1, 3, 2, 1, 2, 1])
@@ -270,4 +253,3 @@ def test_smoothing():
 
 if __name__ == '__main__':
     test_smoothing()
-    #do_test()
