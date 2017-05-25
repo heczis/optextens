@@ -6,6 +6,8 @@ import numpy as np
 import scipy.integrate as sint
 import scipy.interpolate as sitp
 
+import functions
+
 DEFAULT_WINDOW = type(
     '', (), {'x_vals' : np.array([-1, 0, 1]),
              'weights' : np.array([.25, .5, .25])})
@@ -101,18 +103,7 @@ def get_piecewise_constant_function(intervals, values, outside_value=None, tol=1
     intervals : list of interval boundaries, assumed sorted
     values : list of [float] values, len(values) = len(intervals)-1
     """
-    def _fun(x_val):
-        """
-        x_val : float
-        """
-        out = outside_value
-        for x_min, x_max, val in zip(intervals[:-1], intervals[1:], values):
-            if (x_min - x_val) * (x_max - x_val) < tol:
-                out = val
-                break
-        return out
-
-    return _fun
+    return functions.ConstFunction(intervals, values)
 
 def is_in_bounding_box(point, bbox):
     """
@@ -185,7 +176,7 @@ def smooth_int(fun, get_window=None, span=40):
         get_window = get_window_default
 
     def _smf(x):
-        y_vals = x + np.linspace(-.5*span, .5*span, 31)
+        y_vals = x + np.linspace(-.5*span, .5*span, 81)
         window_vals =  np.array([val for val in map(get_window(x, span=span), y_vals)])
         return np.dot(
             np.array([val for val in map(fun, y_vals)]),
