@@ -80,7 +80,7 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
-    output_dir = os.path.dirname(__file__)
+    output_dir = os.path.dirname(os.path.abspath(__file__))
 
     if args.const:
         img = gen_const_marks_horiz(100, 11, [30, 70])
