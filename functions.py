@@ -196,6 +196,16 @@ class LinFunction(Function):
         d_vals = np.array([v2-v1 for v1, v2 in self.values])
         return ConstFunction(self.nodes, d_vals / np.diff(self.nodes))
 
+    def plot(self, *args, **kwargs):
+        """
+        Plot self using matplotlib, *args and **kwargs are passed to
+        `matplotlib.pyplot.plot`.
+        """
+        x = [self.nodes[0],] + sum([[n, n] for n in self.nodes[1:-1]], []) \
+            + [self.nodes[-1],]
+        y = sum(self.values, [])
+        plt.plot(x, y, *args, **kwargs)
+
 def get_window(x0, span=2):
     nodes = [x0-span, x0, x0+span]
     values = [[0, 1. / span], [1. / span, 0]]
@@ -240,10 +250,10 @@ def test_smoothing():
     """
     x = np.linspace(0, 10, 101)
 
-    data = ConstFunction([1, 2, 4, 5, 7, 8], [1, 3, 2, 1, 2, 1])
-    smooth_fun = smoothe(data, get_window)
+    data = ConstFunction([1, 2, 4, 5, 7, 8], [1, 3, 2, 1, 2])
+    smooth_fun = smoothe(data, get_window, 2)
 
-    plt.plot(x, data(x), label='data')
+    data.plot(label='data')
     plt.plot(x, smooth_fun(x))
 
     xx = np.linspace(0, 10, 401)
