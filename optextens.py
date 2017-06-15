@@ -160,6 +160,20 @@ def get_marks_2(fun, mark_thickness, n_pts=101, x0tol=1):
         for x0i in x0]
     return marks
 
+def combine_channels(channels, coefs):
+    """
+    Return a linear combination of given channels.
+
+    channels : list of Channel instances
+    coefs : list of numbers
+
+    Returns a new instance of Channel.
+    """
+    new_data = np.zeros_like(channels[0].data, dtype=float)
+    for ch, c in zip(channels, coefs):
+        new_data += c * ch.data
+    return Channel(new_data)
+
 def parse_args():
     """
     Uses argparse to return CLI-arguments
@@ -186,6 +200,10 @@ def parse_args():
                         help='Show all images with the examined line highlighted')
     parser.add_argument('--invert', '-I', action='store_true', default=False,
                         help='Invert the evaluation of photos')
+    parser.add_argument('--channels-combination', '-c', type=float, nargs='+',
+                        default=[1.0,], help='Combine the color channels of '
+                        'each image using the given coefficients (default: '
+                        '%(default)s).')
     args = parser.parse_args()
     return args
 
@@ -208,6 +226,10 @@ def main():
     images = [
         Image.from_file(file_name, flatten=args.flatten)
         for file_name in args.IMAGE_FILE]
+    images = [
+        Image([combine_channels(img.channels, args.channels_combination),])
+        for img in images]
+
     if args.invert:
         images.reverse()
 
