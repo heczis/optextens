@@ -43,6 +43,14 @@ class Channel:
         """
         pass
 
+    def to_unit(self):
+        """
+        Normalize a channel data to the [0, 1] interval
+        """
+        data = np.array(self.data, dtype=float)
+        new_data = (data - np.min(data)) / (np.max(data) - np.min(data))
+        return Channel(new_data)
+
 
 class Image:
     """
